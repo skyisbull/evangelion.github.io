@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>EVA 粉丝交流站</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: url('1766332126637.webp') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        h1 {
+            color: #ff4500;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #ff4500;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #ff6347;
+        }
+        a {
+            color: #00ffff;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .message {
+            border-bottom: 1px solid #444;
+            padding: 15px 0;
+        }
+        .message h4 {
+            color: #00ffff;
+        }
+        .message small {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录页 -->
+        <div id="loginPage" class="page active">
+            <h1>EVA 粉丝登录</h1>
+            <input type="text" id="loginUser" placeholder="用户名" required>
+            <input type="password" id="loginPwd" placeholder="密码" required>
+            <button onclick="login()">登录</button>
+            <a onclick="switchPage('registerPage')">没有账号？点击注册</a>
+        </div>
+
+        <!-- 注册页 -->
+        <div id="registerPage" class="page">
+            <h1>EVA 粉丝注册</h1>
+            <input type="text" id="regUser" placeholder="设置用户名" required>
+            <input type="password" id="regPwd" placeholder="设置密码" required>
+            <button onclick="register()">注册</button>
+            <a onclick="switchPage('loginPage')">已有账号？点击登录</a>
+        </div>
+
+        <!-- 首页/留言板 -->
+        <div id="indexPage" class="page">
+            <h1>欢迎来到 EVA 粉丝交流站</h1>
+            <p id="userName"></p>
+            <button onclick="logout()">退出登录</button>
+            
+            <h2 style="margin-top:20px">粉丝留言板</h2>
+            <textarea id="msgContent" placeholder="写下你对EVA的热爱..." rows="4" required></textarea>
+            <button onclick="postMsg()">发布留言</button>
+
+            <div id="msgList" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function register() {
+            const user = document.getElementById('regUser').value.trim();
+            const pwd = document.getElementById('regPwd').value.trim();
+            if (!user || !pwd) return alert('请输入完整信息');
+            
+            const users = JSON.parse(localStorage.getItem('evaUsers') || '[]');
+            if (users.some(u => u.user === user)) return alert('用户名已存在');
+            
+            users.push({user, pwd});
+            localStorage.setItem('evaUsers', JSON.stringify(users));
+            alert('注册成功！');
+            switchPage('loginPage');
+        }
+
+        function login() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pwd = document.getElementById('loginPwd').value.trim();
+            const users = JSON.parse(localStorage.getItem('evaUsers') || '[]');
+            
+            const match = users.some(u => u.user === user && u.pwd === pwd);
+            if (match) {
+                localStorage.setItem('currentUser', user);
+                document.getElementById('userName').innerText = `你好，${user}！`;
+                loadMsg();
+                switchPage('indexPage');
+            } else {
+                alert('用户名或密码错误');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            switchPage('loginPage');
+        }
+
+        function postMsg() {
+            const content = document.getElementById('msgContent').value.trim();
+            const user = localStorage.getItem('currentUser');
+            if (!content || !user) return;如果 (!content || !user) 返回;
+            
+            const msg = {
+                author: user,作者：user,
+                content: content,内容：内容，
+                time: new Date().toLocaleString()时间：new Date().toLocaleString()
+            };
+            const msgs = JSON.parse(localStorage.getItem('evaMsg') || '[]');
+            msgs.unshift(msg);msgs.unshift(消息);
+            localStorage.setItem('evaMsg', JSON.stringify(msgs));
+            
+            document.getElementById('msgContent').value = '';
+            loadMsg();
+        }
+
+        function loadMsg() {
+            const msgs = JSON.parse(localStorage.getItem('evaMsg') || '[]');
+            const msgList = document.getElementById('msgList');
+            msgList.innerHTML = msgs.map(m => `
+                <div class="message">
+                    <h4>${m.author}</h4>
+                    <p>${m.content}</p>
+                    <small>${m.time}</small>
+                </div>
+            `).join('');
+        }
+
+        window.onload = function() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                document.getElementById('userName').innerText = `你好，${currentUser}！`;
+                loadMsg();
+                switchPage('indexPage');
+            }
+        }
+    </script>
+</body>
+</html>
